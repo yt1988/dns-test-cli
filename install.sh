@@ -62,9 +62,16 @@ else die "needs sha256sum, shasum or openssl to verify the download"; fi
 [ "$got" = "$want" ] || die "checksum mismatch for $file (expected $want, got $got)"
 chmod +x "$tmp/dnstest"
 
+# this script's input is the pipe from curl: with no options, the menu reads the keyboard from /dev/tty instead
+has_tty() { { : </dev/tty; } 2>/dev/null; }
+
 if [ "${1:-}" = run ]; then
   shift
-  "$tmp/dnstest" "$@"
+  if [ $# -eq 0 ] && has_tty; then
+    "$tmp/dnstest" </dev/tty
+  else
+    "$tmp/dnstest" "$@"
+  fi
   exit $?
 fi
 no_run="${DNSTEST_NO_RUN:-}"
@@ -80,4 +87,5 @@ case ":$PATH:" in *":$dir:"*) ;; *) say "Add $dir to your PATH to run it by name
 
 [ -n "$no_run" ] && exit 0
 say ""
+if [ $# -eq 0 ] && has_tty; then exec "$dir/dnstest" </dev/tty; fi
 exec "$dir/dnstest" "$@"
