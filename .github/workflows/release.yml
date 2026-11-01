@@ -1,0 +1,37 @@
+# On a version tag: build every platform, write checksums, attest where each binary came from, publish the release.
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build
+        run: |
+          mkdir dist
+          for t in linux/amd64 linux/arm64 linux/arm/7 linux/386 linux/riscv64 linux/mips linux/mipsle \
+                   darwin/amd64 darwin/arm64 freebsd/amd64 windows/amd64 windows/arm64; do
+            IFS=/ read -r os arch arm <<< "$t"
+            name="dnstest-$os-$arch"; [ -n "$arm" ] && name="dnstest-$os-armv$arm"
+            [ "$os" = windows ] && name="$name.exe"
+            GOOS=$os GOARCH=$arch GOARM=$arm GOMIPS=softfloat CGO_ENABLED=0 \
+              go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o "dist/$name" .
+          done
+          cp install.sh dist/
+          cd dist && sha256sum dnstest-* install.sh > checksums.txt && cat checksums.txt
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/dnstest-*"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes

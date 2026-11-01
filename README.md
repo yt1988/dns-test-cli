@@ -1,0 +1,58 @@
+# dnstest
+
+**English** · [简体中文](README.zh-CN.md)
+
+Which public DNS resolver is fastest from this machine? `dnstest` measures the same 33 resolvers as [dns.1ms.dog](https://dns.1ms.dog), but for real over every protocol a browser can't speak: **plain DNS over UDP and TCP (port 53), DNS over TLS, DNS over HTTPS and DNS over QUIC**. One binary, no dependencies; for VPSes, Linux boxes, routers (MIPS/ARM) and desktops.
+
+```sh
+curl -fsSL https://dns.1ms.dog/i | sh
+```
+
+That installs `dnstest` to `/usr/local/bin` (or `~/.local/bin`) and runs it. Other ways:
+
+```sh
+curl -fsSL https://dns.1ms.dog/i | sh -s -- run          # run once from a temp dir, install nothing
+curl -fsSL https://dns.1ms.dog/i | sh -s -- --no-run     # install only
+dnstest -p udp,dot -r cloudflare,google,alidns           # some protocols, some resolvers
+dnstest -6                                               # over IPv6
+dnstest --json > result.json
+```
+
+The installer downloads from dns.1ms.dog (which passes GitHub's release files on, for places where GitHub is slow) or GitHub, and checks the SHA-256 against the release's `checksums.txt`. Builds: Linux (amd64, arm64, armv7, 386, riscv64, mips, mipsle), macOS, FreeBSD, Windows ([releases](https://github.com/yt1988/dns-test-cli/releases)). With Go: `go install github.com/yt1988/dns-test-cli@latest`.
+
+## What it shows
+
+```
+   #  DNS                 UDP    TCP    DoT    DoH    DoQ   Uncached  DNSSEC  ECS
+   1  Cloudflare          3.1    3.3    3.6    4.0      ·        14       ✓    –
+   2  Google              3.4    3.6    3.9    4.4      ·        22       ✓    ✓
+   …
+› Fastest: Cloudflare over UDP, 3.1 ms (uncached 14 ms)
+› Your current DNS 10.0.0.2: 18 ms; Cloudflare saves about 15 ms per lookup
+  To use it: set your DNS servers to 1.1.1.1, 1.0.0.1
+```
+
+Each cell is the median of 10 lookups of popular names in ms; `!` marks lost queries, `×` no answer, `·` not offered. The machine's own DNS servers (from `/etc/resolv.conf`, systemd-resolved, or the Windows adapters) are tested too, so you see what switching would gain. `-v` adds a line per resolver and protocol: address, handshake, median, p90, uncached median, loss, and the resolver's outgoing address.
+
+## How it measures
+
+- **Its own clients for all five protocols**, so each query is timed from sending it to having the whole reply. Handshakes (TCP, TLS, QUIC) are timed apart and never inside a query; a query on a connection the server had closed is sent again on a new one.
+- **Warm-up, then 10 interleaved rounds.** Three popular names are asked once to put them in each resolver's cache. Each round then asks every resolver × protocol once, in a new random order, a few at a time, so a burst of trouble on the network hits all of them alike. Every other round also asks a random name that exists nowhere (uncached; shown, not ranked).
+- **Only real answers count**: same ID and same question as the query. No answer within the timeout is a loss.
+- **Interception check.** Before anything else, plain DNS is sent to an address in Cloudflare's web range, where no DNS server runs. A reply means something on the way (a proxy, the router, the ISP) answers port 53 itself: the plain DNS rows are then marked `*` and not ranked. Forged answers injected for some domains are detected the same way.
+- **DNSSEC** (`dnssec-failed.org` must fail, a signed name must carry AD), **ECS** (whether the resolver passed a client subnet), and **NXDOMAIN rewriting** (an address for a name that doesn't exist).
+- Ranked like the website: by the cached median, 3% worse per percent of lost queries.
+
+Host names for DoT, DoH and DoQ are looked up with the system resolver; if it fails or hands out a proxy's fake addresses (198.18.0.0/15), over DoH to 1.1.1.1 and 223.5.5.5 by IP instead.
+
+## Options
+
+`dnstest -h` lists them all: `-r` resolvers, `-p` protocols, `-4`/`-6`, `-n` rounds, `-t` timeout, `-C` concurrency, `--json`, `-v`, `--lang` (10 languages; follows `LANG` otherwise), `--offline`, `--resolvers FILE`, `--list`, `--no-system`.
+
+## Privacy
+
+Each run fetches the current resolver list from dns.1ms.dog (`--offline` uses the copy built into the binary). Nothing else is sent anywhere but the DNS queries themselves, and results are never uploaded.
+
+## License
+
+MIT

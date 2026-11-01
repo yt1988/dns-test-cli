@@ -1,0 +1,23 @@
+# Daily: copy dns.1ms.dog's resolver list into this repo when it changes, so the built-in copy stays current.
+name: resolvers
+on:
+  schedule:
+    - cron: "27 3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch
+        run: |
+          curl -fsSL https://dns.1ms.dog/resolvers.json -o new.json
+          jq -e '.version == 1 and (.resolvers | length) > 10' new.json
+          if cmp -s new.json resolvers.json; then echo "unchanged"; rm new.json; exit 0; fi
+          mv new.json resolvers.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Update the resolver list from dns.1ms.dog ($(jq '.resolvers | length' resolvers.json) resolvers)"
+          git push
