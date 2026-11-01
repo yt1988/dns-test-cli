@@ -59,7 +59,12 @@ type cliOpts struct {
 	timeout                       time.Duration
 }
 
-func main() { os.Exit(cli(os.Args[1:], os.Stdout, os.Stderr)) }
+func main() {
+	// quic-go logs a line when the OS won't give its UDP socket a bigger receive buffer; DoQ queries are a few hundred
+	// bytes, so it doesn't matter here and would only clutter the output
+	os.Setenv("QUIC_GO_DISABLE_RECEIVE_BUFFER_WARNING", "true")
+	os.Exit(cli(os.Args[1:], os.Stdout, os.Stderr))
+}
 
 func cli(args []string, stdout, stderr io.Writer) int {
 	var o cliOpts
