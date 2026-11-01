@@ -26,8 +26,8 @@ jobs:
             GOOS=$os GOARCH=$arch GOARM=$arm GOMIPS=softfloat CGO_ENABLED=0 \
               go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o "dist/$name" .
           done
-          cp install.sh dist/
-          cd dist && sha256sum dnstest-* install.sh > checksums.txt && cat checksums.txt
+          cp install.sh install.ps1 dist/
+          cd dist && sha256sum dnstest-* install.sh install.ps1 > checksums.txt && cat checksums.txt
       - uses: actions/attest-build-provenance@v2
         with:
           subject-path: "dist/dnstest-*"

@@ -85,11 +85,14 @@ func loadList(file string, offline bool) (*list, string, error) {
 			res.Body.Close()
 			if err == nil && res.StatusCode == 200 {
 				if l, err := parseList(b); err == nil {
-					return l, "online", nil
+					return l, "dns.1ms.dog", nil
 				}
 			}
 		}
 	}
 	l, err := parseList(builtinList)
+	if offline {
+		return l, "offline", err // asked for: no note that the site did not answer
+	}
 	return l, "built-in", err
 }

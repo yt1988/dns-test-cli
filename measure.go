@@ -50,14 +50,13 @@ type target struct {
 }
 
 type runOpts struct {
-	resolvers  []string // ids; empty is all
-	protos     []string
-	v6         bool
-	rounds     int
-	timeout    time.Duration
-	conc       int
-	system     bool // add the system's own resolvers
-	includeAll bool
+	resolvers []string // ids; empty is all
+	groups    []string // global, cn, region; empty is all
+	protos    []string
+	v6        bool
+	rounds    int
+	timeout   time.Duration
+	conc      int
 }
 
 type result struct {
@@ -66,6 +65,7 @@ type result struct {
 	inject    bool // forged answers for some names on the path
 	fam       string
 	names     []string
+	from      *Origin // where the test ran from (no address)
 }
 
 func addrPort(ip, port string) string { return net.JoinHostPort(ip, port) }
@@ -134,7 +134,7 @@ func buildTargets(l *list, o runOpts, sys []resolver) []*target {
 	}
 	for i := range l.Resolvers {
 		r := &l.Resolvers[i]
-		if len(want) > 0 && !want[r.ID] {
+		if len(want) > 0 && !want[r.ID] || len(o.groups) > 0 && !contains(o.groups, r.Group) {
 			continue
 		}
 		add(r)
@@ -374,10 +374,18 @@ func run(ctx context.Context, l *list, o runOpts, sys []resolver, prog progressF
 	}
 	res.names = names
 
+	// all before the first timed query: where the test runs from is two HTTPS requests that shouldn't share the line
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() { defer wg.Done(); lookupHosts(ctx, ts, o.v6) }()
-	go func() { defer wg.Done(); res.intercept, res.inject = canary(ctx, l, o.v6, o.timeout) }()
+	go func() {
+		defer wg.Done()
+		// only plain DNS can be intercepted: without it in the test there is nothing to warn about
+		if contains(o.protos, pUDP) || contains(o.protos, pTCP) {
+			res.intercept, res.inject = canary(ctx, l, o.v6, o.timeout)
+		}
+	}()
+	go func() { defer wg.Done(); res.from = origin(o.v6) }()
 	wg.Wait()
 
 	uRounds := (o.rounds + 1) / 2

@@ -13,13 +13,14 @@ import (
 var useColor bool
 
 const (
-	cReset  = "\x1b[0m"
-	cBold   = "\x1b[1m"
-	cDim    = "\x1b[2m"
-	cRed    = "\x1b[31m"
-	cGreen  = "\x1b[32m"
-	cYellow = "\x1b[33m"
-	cCyan   = "\x1b[36m"
+	cReset   = "\x1b[0m"
+	cBold    = "\x1b[1m"
+	cDim     = "\x1b[2m"
+	cRed     = "\x1b[31m"
+	cGreen   = "\x1b[32m"
+	cYellow  = "\x1b[33m"
+	cCyan    = "\x1b[36m"
+	cMagenta = "\x1b[35m"
 )
 
 func paint(code, s string) string {
@@ -113,16 +114,31 @@ func cell(res *result, t *target) string {
 		return paint(cRed, "×")
 	}
 	s := fmtMS(t.median())
+	if res.intercept && t.plain() {
+		return paint(cDim, s+"*")
+	}
 	switch l := t.loss(); {
 	case l >= .2:
-		s = paint(cRed, s+"!")
+		return paint(cRed, s+"!")
 	case l > 0:
-		s = paint(cYellow, s+"!")
+		return paint(cYellow, s+"!")
 	}
-	if res.intercept && t.plain() {
-		s = paint(cDim, s+"*")
+	return paint(tier(t.median()), s)
+}
+
+// tier colors a time as the website does: green up to 20 ms, then cyan, yellow, magenta, and red above 200 ms.
+func tier(d time.Duration) string {
+	switch v := ms(d); {
+	case v <= 20:
+		return cGreen
+	case v <= 50:
+		return cCyan
+	case v <= 100:
+		return cYellow
+	case v <= 200:
+		return cMagenta
 	}
-	return s
+	return cRed
 }
 
 func mark(v int8) string {
@@ -135,7 +151,7 @@ func mark(v int8) string {
 	return paint(cDim, "?")
 }
 
-func printResult(w io.Writer, res *result, o runOpts, src string, verbose bool) {
+func printResult(w io.Writer, res *result, o runOpts, src string, verbose bool, took time.Duration) {
 	rows := ranked(res)
 	used := map[string]bool{}
 	for _, t := range res.targets {
@@ -154,6 +170,7 @@ func printResult(w io.Writer, res *result, o runOpts, src string, verbose bool) 
 		}
 	}
 	fmt.Fprintln(w, paint(cBold, "dnstest "+version)+paint(cDim, " · "+T("head", res.fam, nr, o.rounds)))
+	fmt.Fprintf(w, "%s %s\n", paint(cDim, T("from")), paint(cBold, res.from.String()))
 	if res.intercept {
 		fmt.Fprintln(w, paint(cYellow, "! "+T("w_intercept")))
 	} else if res.inject {
@@ -240,6 +257,82 @@ func printResult(w io.Writer, res *result, o runOpts, src string, verbose bool) 
 	if src == "built-in" {
 		fmt.Fprintln(w, paint(cDim, T("offline_list")))
 	}
+	fmt.Fprintln(w, paint(cDim, T("took", took.Round(time.Second), listName(src))))
+}
+
+// listName says where the resolver list came from: dns.1ms.dog, a file, or the copy built into the binary.
+func listName(src string) string {
+	if src == "built-in" || src == "offline" {
+		return T("builtin")
+	}
+	return src
+}
+
+// gap is what goes between a label and its value: a space after "Saved:", nothing after a full-width colon ("已保存：").
+func gap(label string) string {
+	if strings.HasSuffix(label, "：") {
+		return ""
+	}
+	return " "
+}
+
+// printMarkdown: the result as a Markdown table, to paste into a forum post or an issue.
+func printMarkdown(w io.Writer, res *result, o runOpts, src string, took time.Duration) {
+	rows := ranked(res)
+	used := map[string]bool{}
+	for _, t := range res.targets {
+		used[t.proto] = true
+	}
+	head, sep := "| # | "+T("c_dns")+" |", "|---:|---|"
+	var cols []string
+	for _, p := range protos {
+		if used[p] {
+			cols = append(cols, p)
+			head += " " + protoName[p] + " |"
+			sep += "---:|"
+		}
+	}
+	head += " " + T("c_uncached") + " | DNSSEC |"
+	sep += "---:|:---:|"
+	fmt.Fprintf(w, "**dnstest %s** · %s · %s %s\n\n%s\n%s\n", version, T("head", res.fam, len(rows), o.rounds), T("from"), res.from.String(), head, sep)
+	plainMS := func(t *target) string {
+		switch {
+		case t == nil:
+			return "·"
+		case !t.up:
+			return "×"
+		case res.intercept && t.plain():
+			return fmtMS(t.median()) + "*"
+		case t.loss() > 0:
+			return fmtMS(t.median()) + "!"
+		}
+		return fmtMS(t.median())
+	}
+	for i, r := range rows {
+		n := "–"
+		if r.best != nil {
+			n = fmt.Sprint(i + 1)
+		}
+		line := "| " + n + " | " + r.r.Name + " |"
+		for _, p := range cols {
+			line += " " + plainMS(r.by[p]) + " |"
+		}
+		unc, sec := "–", ""
+		if r.best != nil {
+			unc = fmtMS(r.best.uncachedMed())
+		}
+		for _, t := range r.by {
+			if t.dnssec == 1 {
+				sec = "✓"
+			}
+		}
+		fmt.Fprintf(w, "%s %s | %s |\n", line, unc, sec)
+	}
+	fmt.Fprintf(w, "\n%s\n", T("legend", o.rounds, strings.Join(res.names, ", ")))
+	if res.intercept {
+		fmt.Fprintln(w, "\n"+T("w_intercept"))
+	}
+	fmt.Fprintf(w, "\n%s · https://dns.1ms.dog\n", T("took", took.Round(time.Second), listName(src)))
 }
 
 func maxI8(a, b int8) int8 {
@@ -405,7 +498,7 @@ func toJSON(res *result, src string, took time.Duration) any {
 	}
 	return map[string]any{
 		"version": version, "family": res.fam, "list": src, "names": res.names, "seconds": math.Round(took.Seconds()*10) / 10,
-		"intercepted": res.intercept, "injected": res.inject, "results": ts,
+		"from": res.from, "intercepted": res.intercept, "injected": res.inject, "results": ts,
 	}
 }
 

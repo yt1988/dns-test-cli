@@ -8,12 +8,20 @@ Which public DNS resolver is fastest from this machine? `dnstest` measures the s
 curl -fsSL https://dns.1ms.dog/i | sh
 ```
 
-That installs `dnstest` to `/usr/local/bin` (or `~/.local/bin`) and runs it. Other ways:
+That installs `dnstest` to `/usr/local/bin` (or `~/.local/bin`) and starts it with a short menu: all resolvers or some regions or protocols, IPv4 or IPv6, how many rounds, and whether to save the result. It then prints the same test as a command, to run again without the menu. On Windows, in PowerShell:
+
+```powershell
+irm https://dns.1ms.dog/i.ps1 | iex
+```
+
+Other ways:
 
 ```sh
 curl -fsSL https://dns.1ms.dog/i | sh -s -- run          # run once from a temp dir, install nothing
 curl -fsSL https://dns.1ms.dog/i | sh -s -- --no-run     # install only
 dnstest -p udp,dot -r cloudflare,google,alidns           # some protocols, some resolvers
+dnstest -g cn,global -n 20                               # mainland China and the global ones, 20 rounds
+dnstest -o md                                            # also save the result as Markdown (or -o json)
 dnstest -6                                               # over IPv6
 dnstest --json > result.json
 ```
@@ -32,7 +40,7 @@ The installer downloads from dns.1ms.dog (which passes GitHub's release files on
   To use it: set your DNS servers to 1.1.1.1, 1.0.0.1
 ```
 
-Each cell is the median of 10 lookups of popular names in ms; `!` marks lost queries, `×` no answer, `·` not offered. The machine's own DNS servers (from `/etc/resolv.conf`, systemd-resolved, or the Windows adapters) are tested too, so you see what switching would gain. `-v` adds a line per resolver and protocol: address, handshake, median, p90, uncached median, loss, and the resolver's outgoing address.
+The second line says where the test ran from (city and network, never the address). Each cell is the median of 10 lookups of popular names in ms; `!` marks lost queries, `×` no answer, `·` not offered. The machine's own DNS servers (from `/etc/resolv.conf`, systemd-resolved, or the Windows adapters) are tested too, so you see what switching would gain. `-v` adds a line per resolver and protocol: address, handshake, median, p90, uncached median, loss, and the resolver's outgoing address.
 
 ## How it measures
 
@@ -47,11 +55,13 @@ Host names for DoT, DoH and DoQ are looked up with the system resolver; if it fa
 
 ## Options
 
-`dnstest -h` lists them all: `-r` resolvers, `-p` protocols, `-4`/`-6`, `-n` rounds, `-t` timeout, `-C` concurrency, `--json`, `-v`, `--lang` (10 languages; follows `LANG` otherwise), `--offline`, `--resolvers FILE`, `--list`, `--no-system`.
+`dnstest -h` lists them all: `-r` resolvers, `-g` regions (`global`, `cn`, `region`), `-p` protocols, `-4`/`-6`, `-n` rounds, `-t` timeout, `-C` concurrency, `-o md|json` and `--file` to save, `--json` for stdout, `-v`, `--lang` (10 languages; the menu asks once and remembers it), `--offline`, `--resolvers FILE`, `--list`, `--no-system`, `--update`.
+
+**Updates.** At most once an hour dnstest asks dns.1ms.dog for the latest release; in a terminal it offers to update, checks the new binary against the release checksums, swaps it in and runs again. `dnstest --update` does it right away; `--offline` or `DNSTEST_NO_UPDATE=1` turns it off.
 
 ## Privacy
 
-Each run fetches the current resolver list from dns.1ms.dog (`--offline` uses the copy built into the binary). Nothing else is sent anywhere but the DNS queries themselves, and results are never uploaded.
+Each run fetches the current resolver list from dns.1ms.dog and asks Cloudflare (`speed.cloudflare.com/meta`) where it runs from, for the "from" line: city, country and network. The address itself is never shown or saved. At most once an hour it asks dns.1ms.dog for the latest version. `--offline` skips all three. Nothing else is sent anywhere but the DNS queries themselves, and results are never uploaded.
 
 ## License
 

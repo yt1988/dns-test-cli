@@ -9,6 +9,10 @@ import (
 // The languages of the site, so a link from a page and the tool it hands out speak the same one.
 var languages = []string{"en", "zh-CN", "zh-TW", "ja", "ko", "es", "fr", "de", "pt", "ru"}
 
+// each language by its own name, as the menu lists them
+var langNames = map[string]string{"en": "English", "zh-CN": "简体中文", "zh-TW": "繁體中文", "ja": "日本語", "ko": "한국어",
+	"es": "Español", "fr": "Français", "de": "Deutsch", "pt": "Português", "ru": "Русский"}
+
 var lang = "en"
 
 // T looks up a text in the current language and fills it like fmt.Sprintf. A test makes sure every language has
