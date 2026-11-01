@@ -423,7 +423,12 @@ func (p *progLine) update(done, total int, t *target) {
 	defer p.mu.Unlock()
 	pct := done * 100 / max(1, total)
 	n := 24 * done / max(1, total)
-	bar := strings.Repeat("━", n) + paint(cDim, strings.Repeat("━", 24-n))
+	// the rest of the track is dim; without colors it is a thinner line, so the bar still shows how far it got
+	rest := "━"
+	if !useColor {
+		rest = "─"
+	}
+	bar := paint(cCyan, strings.Repeat("━", n)) + paint(cDim, strings.Repeat(rest, 24-n))
 	fmt.Fprintf(p.w, "\r\x1b[K  %s %3d%%  %s", bar, pct, paint(cDim, t.r.Name+" "+protoName[t.proto]))
 }
 
