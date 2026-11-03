@@ -95,7 +95,7 @@ func (o *Origin) String() string {
 	if o == nil {
 		return T("unknownNet")
 	}
-	where := strings.Trim(o.City+", "+o.Country, ", ")
+	where := strings.Trim(o.City+", "+regionName(o.Country), ", ")
 	net := o.Org
 	if o.ASN > 0 {
 		net = strings.TrimSpace("AS" + strconv.Itoa(o.ASN) + " " + o.Org)
