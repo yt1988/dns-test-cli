@@ -35,7 +35,7 @@ The installer downloads from dns.1ms.dog (which passes GitHub's release files on
 >
 > **IP & privacy**: [EgressLens](https://github.com/yt1988/egresslens "Every exit IP your traffic uses, and which sites see which") · [IP Quality Test](https://github.com/yt1988/ip-quality-test "How clean your IP is, scored 0–100 from a dozen sources") · [Who Are You](https://github.com/yt1988/who-are-you "What any website can tell about you without asking") · [ASN Lookup](https://github.com/yt1988/asn-lookup "Who owns an IP, and the prefixes and peers of every AS") · [Streaming & AI Unlock Check](https://github.com/yt1988/unlock-check "Which streaming and AI services work on your IP")
 >
-> **Cloud & costs**: [Me2Cloud](https://github.com/yt1988/me2cloud "Latency, jitter and loss to every region of the big clouds") · [Lightsail Cost Saver](https://github.com/yt1988/lightsail-cost-saver "Forecast Lightsail transfer overage, and the cheapest way to add more") · [Cloud Cost Planner](https://github.com/yt1988/cloud-cost-planner "The cheapest VPS, storage and CDN setup for your traffic")
+> **Cloud & costs**: [Me2Cloud](https://github.com/yt1988/me2cloud "Latency, jitter and timeouts to every region of the big clouds") · [Lightsail Cost Saver](https://github.com/yt1988/lightsail-cost-saver "Forecast Lightsail transfer overage, and the cheapest way to add more") · [Cloud Cost Planner](https://github.com/yt1988/cloud-cost-planner "The cheapest VPS, storage and CDN setup for your traffic")
 >
 > **Command line**: [`httpslatency`](https://github.com/yt1988/https-latency-test-cli "1ms.dog's latency test, run from a server or router") · [`vps2cloud`](https://github.com/yt1988/vps2cloud "Me2Cloud from a server: latency to every region of the big clouds")
 <!-- /1ms-repos -->
