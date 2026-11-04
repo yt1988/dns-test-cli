@@ -38,7 +38,7 @@ Output
   -o, --output FORMAT   md or json: also saved to a file in the current folder (dnstest-<date>-<time>.<ext>)
       --file NAME       the file to save to instead
       --json            the full result as JSON on stdout (nothing else)
-  -v, --verbose         a line per resolver and protocol: address, handshake, median, p90, loss
+  -v, --verbose         a line per resolver and protocol: address, handshake, median, p90, no-answer rate
       --lang CODE       en, zh-CN, zh-TW, ja, ko, es, fr, de, pt, ru (the menu asks once and remembers it;
                         DNSTEST_LANG works too)
       --no-color        plain text (also with NO_COLOR set)

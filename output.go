@@ -241,7 +241,7 @@ func printResult(w io.Writer, res *result, o runOpts, src string, verbose bool, 
 				if !t.up {
 					line += paint(cRed, " "+t.err)
 				} else {
-					line += fmt.Sprintf(" hs %6s  med %6s  p90 %6s  unc %6s  loss %3.0f%%  %s", fmtMS(t.hs), fmtMS(t.median()), fmtMS(t.p90()), fmtMS(t.uncachedMed()), t.loss()*100, t.egress)
+					line += fmt.Sprintf(" hs %6s  med %6s  p90 %6s  unc %6s  no-ans %3.0f%%  %s", fmtMS(t.hs), fmtMS(t.median()), fmtMS(t.p90()), fmtMS(t.uncachedMed()), t.loss()*100, t.egress)
 				}
 				fmt.Fprintln(w, line)
 			}

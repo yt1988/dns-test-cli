@@ -22,7 +22,7 @@ import (
 //     trouble hits every resolver alike instead of whichever was being tested at that moment.
 //     Cached: one of the popular names. Uncached (every other round): a random name under nxzone, which no resolver
 //     can have cached, so it has to ask the authoritative servers: what an unpopular site costs.
-//   - A reply only counts when it answers that very query (ID and question). No reply within the timeout is a loss.
+//   - A reply only counts when it answers that very query (ID and question). No reply within the timeout counts as no answer (not packet loss: a resolver that rate-limits or drops queries looks the same).
 //   - Checks: DNSSEC validation, client subnet (ECS), and whether a name that doesn't exist comes back as NXDOMAIN
 //     (some resolvers answer with an ad server instead).
 //   - Before all that, plain DNS is sent to an address that runs no DNS server. Any reply means something on the way
@@ -526,8 +526,8 @@ func (t *target) loss() float64 {
 	return float64(t.lost) / float64(t.sent)
 }
 
-// score ranks targets as dns.1ms.dog does: the median of the cached lookups, and each percent of lost queries makes it
-// 3% worse (a lost query costs a retry, a second or more). Uncached times are shown, not ranked: they depend on where
+// score ranks targets as dns.1ms.dog does: the median of the cached lookups, and each percent of unanswered queries makes
+// it 3% worse (an unanswered query costs a retry, a second or more). Uncached times are shown, not ranked: they depend on where
 // each site's own DNS servers are. Lower is better; -1 when there's nothing to rank.
 func (t *target) score() float64 {
 	m := t.median()

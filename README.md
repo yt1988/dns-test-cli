@@ -52,16 +52,16 @@ The installer downloads from dns.1ms.dog (which passes GitHub's release files on
   To use it: set your DNS servers to 1.1.1.1, 1.0.0.1
 ```
 
-The second line says where the test ran from (city and network, never the address). Each cell is the median of 10 lookups of popular names in ms; `!` marks lost queries, `×` no answer, `·` not offered. The machine's own DNS servers (from `/etc/resolv.conf`, systemd-resolved, or the Windows adapters) are tested too, so you see what switching would gain. `-v` adds a line per resolver and protocol: address, handshake, median, p90, uncached median, loss, and the resolver's outgoing address.
+The second line says where the test ran from (city and network, never the address). Each cell is the median of 10 lookups of popular names in ms; `!` marks queries that got no answer, `×` no answer, `·` not offered. The machine's own DNS servers (from `/etc/resolv.conf`, systemd-resolved, or the Windows adapters) are tested too, so you see what switching would gain. `-v` adds a line per resolver and protocol: address, handshake, median, p90, uncached median, no-answer rate, and the resolver's outgoing address.
 
 ## How it measures
 
 - **Its own clients for all five protocols**, so each query is timed from sending it to having the whole reply. Handshakes (TCP, TLS, QUIC) are timed apart and never inside a query; a query on a connection the server had closed is sent again on a new one.
 - **Warm-up, then 10 interleaved rounds.** Three popular names are asked once to put them in each resolver's cache. Each round then asks every resolver × protocol once, in a new random order, a few at a time, so a burst of trouble on the network hits all of them alike. Every other round also asks a random name that exists nowhere (uncached; shown, not ranked).
-- **Only real answers count**: same ID and same question as the query. No answer within the timeout is a loss.
+- **Only real answers count**: same ID and same question as the query. No answer within the timeout counts toward the no-answer rate (not packet loss: a resolver that rate-limits or drops queries looks the same).
 - **Interception check.** Before anything else, plain DNS is sent to an address in Cloudflare's web range, where no DNS server runs. A reply means something on the way (a proxy, the router, the ISP) answers port 53 itself: the plain DNS rows are then marked `*` and not ranked. Forged answers injected for some domains are detected the same way.
 - **DNSSEC** (`dnssec-failed.org` must fail, a signed name must carry AD), **ECS** (whether the resolver passed a client subnet), and **NXDOMAIN rewriting** (an address for a name that doesn't exist).
-- Ranked like the website: by the cached median, 3% worse per percent of lost queries.
+- Ranked like the website: by the cached median, 3% worse per percent of no-answer rate.
 
 Host names for DoT, DoH and DoQ are looked up with the system resolver; if it fails or hands out a proxy's fake addresses (198.18.0.0/15), over DoH to 1.1.1.1 and 223.5.5.5 by IP instead.
 
