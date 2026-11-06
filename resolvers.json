@@ -78,6 +78,9 @@
    "doh": {
     "url": "https://dns.quad9.net/dns-query"
    },
+   "doq": {
+    "host": "dns.quad9.net"
+   },
    "dnssec": true,
    "blocks": "malware"
   },
@@ -250,6 +253,9 @@
    },
    "doh": {
     "url": "https://ordns.he.net/dns-query"
+   },
+   "doq": {
+    "host": "ordns.he.net"
    },
    "dnssec": true
   },
@@ -475,6 +481,9 @@
    "doh": {
     "url": "https://dns.digitale-gesellschaft.ch/dns-query"
    },
+   "doq": {
+    "host": "dns.digitale-gesellschaft.ch"
+   },
    "dnssec": true
   },
   {
@@ -497,6 +506,9 @@
    "doh": {
     "url": "https://dnsforge.de/dns-query"
    },
+   "doq": {
+    "host": "dnsforge.de"
+   },
    "dnssec": true,
    "blocks": "ads"
   },
@@ -506,14 +518,6 @@
    "group": "region",
    "cc": "DK",
    "site": "https://blog.uncensoreddns.org/",
-   "udp": [
-    "91.239.100.100",
-    "89.233.43.71"
-   ],
-   "udp6": [
-    "2001:67c:28a4::",
-    "2a01:3a0:53:53::"
-   ],
    "dot": {
     "host": "anycast.uncensoreddns.org"
    },
@@ -574,6 +578,9 @@
    "doh": {
     "url": "https://doh.dns4all.eu/dns-query"
    },
+   "doq": {
+    "host": "dot.dns4all.eu"
+   },
    "dnssec": true
   },
   {
@@ -601,6 +608,9 @@
    },
    "doh": {
     "url": "https://dns.comss.one/dns-query"
+   },
+   "doq": {
+    "host": "dns.comss.one"
    },
    "dnssec": false,
    "blocks": "ads"
@@ -630,6 +640,9 @@
    },
    "doh": {
     "url": "https://doh.tiar.app/dns-query"
+   },
+   "doq": {
+    "host": "dot.tiar.app"
    },
    "dnssec": true
   },
